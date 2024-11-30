@@ -1,0 +1,13 @@
+Hello, World! This is a test file for validating the text analysis program.
+
+1234567890 - These are numbers.
+
+() [] {} - These are different types of brackets.
+
+Some punctuation marks: . , ; : ! ? ' " -
+
+Special characters: @ # $ % ^ & * ~ < > | \
+
+A long string with mixed content: AbC123{x}(?!)
+
+End of test.

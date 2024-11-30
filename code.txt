@@ -1,0 +1,1114 @@
+FILE: BracketCounter.cpp
+#include "BracketCounter.h"
+
+BracketCounter::BracketCounter(TextAnylazerModel& model, size_t maxTextLength)
+    : roundBracketCount(0), squareBracketCount(0), curlyBracketCount(0), maxTextLength(maxTextLength), model(model) {}
+
+void BracketCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    roundBracketCount = squareBracketCount = curlyBracketCount = 0;
+
+    for (char ch : text) {
+        switch (ch) {
+        case '(':
+        case ')':
+            ++roundBracketCount;
+            break;
+        case '[':
+        case ']':
+            ++squareBracketCount;
+            break;
+        case '{':
+        case '}':
+            ++curlyBracketCount;
+            break;
+        default:
+            break;
+        }
+    }
+
+    model.addResult("Round Brackets: " + std::to_string(roundBracketCount));
+    model.addResult("Square Brackets: " + std::to_string(squareBracketCount));
+    model.addResult("Curly Brackets: " + std::to_string(curlyBracketCount));
+}
+
+bool BracketCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Input text is empty.");
+    }
+
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Input text exceeds maximum allowed length.");
+    }
+
+    if (text.find('\0') != std::string::npos) {
+        throw ValidationException("Input text contains null characters.");
+    }
+
+    return true;
+}
+
+void BracketCounter::update(const std::string& message) {
+    std::cout << "BracketCounter received update: " << message << std::endl;
+}
+
+void BracketCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Round Brackets: " << roundBracketCount << "\n"
+        << "Square Brackets: " << squareBracketCount << "\n"
+        << "Curly Brackets: " << curlyBracketCount << std::endl;
+}
+
+void BracketCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    roundBracketCount = squareBracketCount = curlyBracketCount = 0;
+}
+
+void BracketCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+size_t BracketCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int BracketCounter::getRoundBracketCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return roundBracketCount;
+}
+
+int BracketCounter::getSquareBracketCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return squareBracketCount;
+}
+
+int BracketCounter::getCurlyBracketCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return curlyBracketCount;
+}
+
+FILE: BracketCounter.h
+#ifndef BRACKET_COUNTER_H
+#define BRACKET_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+
+class BracketCounter : public Operation {
+private:
+    int roundBracketCount, squareBracketCount, curlyBracketCount;
+    size_t maxTextLength;
+    mutable std::mutex mtx;
+    TextAnylazerModel& model;
+
+public:
+    BracketCounter(TextAnylazerModel& model, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    bool validate(const std::string& text) const override;
+    void update(const std::string& message) override;
+
+    void printResults(std::ostream& out) const override;
+
+    int getRoundBracketCount() const;
+
+    int getSquareBracketCount() const;
+
+    int getCurlyBracketCount() const;
+
+    void reset();
+    void setMaxTextLength(size_t length);
+    size_t getMaxTextLength() const;
+};
+
+#endif
+
+FILE: DigitCounter.cpp
+#include "DigitCounter.h"
+
+DigitCounter::DigitCounter(TextAnylazerModel& model, size_t maxTextLength)
+    : digitCount(0), maxTextLength(maxTextLength), model(model) {}
+
+void DigitCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    digitCount = 0;
+    for (char ch : text) {
+        if (std::isdigit(static_cast<unsigned char>(ch))) {
+            ++digitCount;
+        }
+    }
+
+    model.addResult("Digits: " + std::to_string(digitCount));
+}
+
+void DigitCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Digits: " << digitCount << std::endl;
+}
+
+bool DigitCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Validation failed: Input text is empty.");
+    }
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Validation failed: Input text length (" +
+            std::to_string(text.size()) +
+            ") exceeds the maximum allowed length (" +
+            std::to_string(maxTextLength) + ").");
+    }
+    if (text.find('\0') != std::string::npos) {
+        throw ValidationException("Validation failed: Input text contains null characters.");
+    }
+    return true;
+}
+
+void DigitCounter::update(const std::string& message) {
+    std::cout << "DigitCounter received update: " << message << std::endl;
+}
+
+std::string DigitCounter::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return "Digits: " + std::to_string(digitCount);
+}
+
+void DigitCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+void DigitCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    digitCount = 0;
+}
+
+size_t DigitCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int DigitCounter::getDigitCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return digitCount;
+}  
+
+FILE: DigitCounter.h
+#ifndef DIGIT_COUNTER_H
+#define DIGIT_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+#include <cctype>
+#include <ostream>
+#include <iostream>
+
+class DigitCounter : public Operation {
+private:
+    int digitCount;                 
+    size_t maxTextLength;              
+    mutable std::mutex mtx;             
+    TextAnylazerModel& model;           
+
+public:
+    DigitCounter(TextAnylazerModel& model, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    void printResults(std::ostream& out) const override;
+    bool validate(const std::string& text) const override;
+    void update(const std::string& message) override;
+
+    int getDigitCount() const;
+
+    std::string getResults() const;
+    void setMaxTextLength(size_t length);
+    void reset();
+    size_t getMaxTextLength() const;
+};
+
+#endif
+
+FILE: LetterCounter.cpp
+#include "LetterCounter.h"
+
+LetterCounter::LetterCounter(TextAnylazerModel& model, bool caseInsensitive, size_t maxTextLength)
+    : letterCount(0), caseInsensitive(caseInsensitive), maxTextLength(maxTextLength), model(model) {}
+
+void LetterCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    letterCount = 0;
+    for (char ch : text) {
+        if (std::isalpha(static_cast<unsigned char>(ch))) {
+            if (caseInsensitive) {
+                ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+            }
+            ++letterCount;
+        }
+    }
+
+    model.addResult("Letters: " + std::to_string(letterCount));
+}
+
+bool LetterCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Validation failed: Input text is empty.");
+    }
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Validation failed: Input text length (" +
+            std::to_string(text.size()) +
+            ") exceeds the maximum allowed length (" +
+            std::to_string(maxTextLength) + ").");
+    }
+    if (text.find('\0') != std::string::npos) {
+        throw ValidationException("Validation failed: Input text contains null characters.");
+    }
+    return true;
+}
+
+void LetterCounter::update(const std::string& message) {
+    std::cout << "LetterCounter received update: " << message << std::endl;
+}
+
+void LetterCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Letters: " << letterCount << std::endl;
+}
+
+std::string LetterCounter::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return "Letters: " + std::to_string(letterCount);
+}
+
+void LetterCounter::setCaseInsensitive(bool value) {
+    std::lock_guard<std::mutex> lock(mtx);
+    caseInsensitive = value;
+}
+
+void LetterCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+void LetterCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    letterCount = 0;
+}
+
+bool LetterCounter::isCaseInsensitive() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return caseInsensitive;
+}
+
+size_t LetterCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int LetterCounter::getLetterCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return letterCount;
+}
+
+FILE:LetterCounter.h
+#ifndef LETTER_COUNTER_H
+#define LETTER_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+#include <cctype>
+
+class LetterCounter : public Operation {
+private:
+    int letterCount;
+    bool caseInsensitive;
+    size_t maxTextLength;
+    mutable std::mutex mtx;
+    TextAnylazerModel& model;
+
+public:
+    LetterCounter(TextAnylazerModel& model, bool caseInsensitive = true, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    bool validate(const std::string& text) const override;
+    void update(const std::string& message) override;
+
+    void printResults(std::ostream& out) const override; 
+
+    int getLetterCount() const;
+
+    std::string getResults() const;
+    void setCaseInsensitive(bool value);
+    void setMaxTextLength(size_t length);
+    void reset();
+    bool isCaseInsensitive() const;
+    size_t getMaxTextLength() const;
+};
+
+#endif
+FILE: main.cpp
+#include <iostream>
+#include "TextAnylazerController.h"
+
+using namespace std;
+
+int main()
+{
+    try
+    {
+        TextAnylazerController controller;
+
+        string inputFile, outputFile;
+        cout << "Enter input file name: ";
+        cin >> inputFile;
+        cout << "Enter output file name: ";
+        cin >> outputFile;
+
+        controller.analyze(inputFile, outputFile);
+    }
+    catch (const exception &ex)
+    {
+        cerr << "Error: " << ex.what() << endl;
+        return 1;
+    }
+
+    return 0;
+}
+FILE:Observable.cpp
+#include "Observable.h"
+
+void Observable::addObserver(Observer* observer) {
+    observers.push_back(observer);
+}
+
+void Observable::removeObserver(Observer* observer) {
+    observers.erase(std::remove(observers.begin(), observers.end(), observer), observers.end());
+}
+
+void Observable::notifyObservers(const std::string& message) const {
+    for (auto observer : observers) {
+        observer->update(message);
+    }
+}
+
+FILE:Observable.h
+#ifndef OBSERVABLE_H
+#define OBSERVABLE_H
+
+#include <vector>
+#include <algorithm>
+#include "Observer.h"
+
+class Observable {
+private:
+    std::vector<Observer*> observers;
+
+public:
+    void addObserver(Observer* observer);
+    void removeObserver(Observer* observer);
+    void notifyObservers(const std::string& message) const;
+};
+
+#endif 
+
+FILE: Observer.h
+#ifndef OBSERVER_H
+#define OBSERVER_H
+
+#include <string>
+
+class Observer {
+public:
+    virtual ~Observer() = default;
+    virtual void update(const std::string& message) = 0;
+};
+
+#endif
+
+FILE: Operation.h
+#ifndef OPERATION_H
+#define OPERATION_H
+
+#include "Observer.h"
+#include <iostream>
+#include <string>
+
+class Operation : public Observer {
+public:
+    virtual ~Operation() = default;
+    virtual void calculate(const std::string& text) = 0;
+    virtual void printResults(std::ostream& out) const = 0;
+    virtual bool validate(const std::string& text) const = 0;
+};
+
+#endif
+
+FILE:PunctuationCounter.cpp
+#include "PunctuationCounter.h"
+#include <cctype>
+#include <string>
+#include <unordered_set>
+
+PunctuationCounter::PunctuationCounter(TextAnylazerModel& model, size_t maxTextLength)
+    : punctuationCount(0), maxTextLength(maxTextLength), model(model) {}
+
+void PunctuationCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    punctuationCount = 0;
+
+    const std::unordered_set<char> validPunctuation = { '.', ',', ';', ':', '!', '?', '\'', '\"', '-' };
+
+    for (char ch : text) {
+        if (validPunctuation.count(ch)) {
+            ++punctuationCount;
+        }
+    }
+
+    model.addResult("Punctuation Marks: " + std::to_string(punctuationCount));
+}
+
+bool PunctuationCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Input text is empty.");
+    }
+
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Input text exceeds maximum allowed length.");
+    }
+
+    if (text.find('\0') != std::string::npos) {
+        throw ValidationException("Input text contains null characters.");
+    }
+
+    return true;
+}
+
+void PunctuationCounter::update(const std::string& message) {
+    std::cout << "PunctuationCounter received update: " << message << std::endl;
+}
+
+void PunctuationCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Punctuation Marks: " << punctuationCount << std::endl;
+}
+
+std::string PunctuationCounter::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return "Punctuation Marks: " + std::to_string(punctuationCount);
+}
+
+void PunctuationCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    punctuationCount = 0;
+}
+
+void PunctuationCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+size_t PunctuationCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int PunctuationCounter::getPunctuationCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return punctuationCount;
+}
+
+FILE: PunctuationCounter.h
+#ifndef PUNCTUATION_COUNTER_H
+#define PUNCTUATION_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+
+class PunctuationCounter : public Operation {
+private:
+    int punctuationCount;
+    size_t maxTextLength;
+    mutable std::mutex mtx;
+    TextAnylazerModel& model;
+
+public:
+    PunctuationCounter(TextAnylazerModel& model, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    bool validate(const std::string& text) const override;
+    void update(const std::string& message) override;
+
+    std::string getResults() const;
+    void printResults(std::ostream& out) const override;
+
+    int getPunctuationCount() const;
+
+    void reset();
+    void setMaxTextLength(size_t length);
+    size_t getMaxTextLength() const;
+};
+
+#endif
+
+FILE: SpecialSymbolCounter.cpp
+#include "SpecialSymbolCounter.h"
+#include <unordered_set>
+#include <cctype>
+
+SpecialSymbolCounter::SpecialSymbolCounter(TextAnylazerModel& model, size_t maxTextLength)
+    : specialSymbolCount(0), maxTextLength(maxTextLength), model(model) {}
+
+void SpecialSymbolCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    specialSymbolCount = 0;
+
+    const std::unordered_set<char> specialSymbols = { '@', '#', '$', '%', '^', '&', '*', '~', '<', '>', '|', '\\' };
+
+    for (char ch : text) {
+        if (specialSymbols.count(ch)) {
+            ++specialSymbolCount;
+        }
+    }
+
+    model.addResult("Special Symbols: " + std::to_string(specialSymbolCount));
+}
+
+void SpecialSymbolCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Special Symbols: " << specialSymbolCount << std::endl;
+}
+
+bool SpecialSymbolCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Validation failed: Input text is empty.");
+    }
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Validation failed: Input text length exceeds the maximum allowed length (" +
+            std::to_string(maxTextLength) + ").");
+    }
+    if (text.find('\0') != std::string::npos) {
+        throw ValidationException("Validation failed: Input text contains null characters.");
+    }
+    return true;
+}
+
+void SpecialSymbolCounter::update(const std::string& message) {
+    std::cout << "SpecialSymbolCounter received update: " << message << std::endl;
+}
+
+std::string SpecialSymbolCounter::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return "Special Symbols: " + std::to_string(specialSymbolCount);
+}
+
+void SpecialSymbolCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+void SpecialSymbolCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    specialSymbolCount = 0;
+}
+
+size_t SpecialSymbolCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int SpecialSymbolCounter::getSpecialSymbolCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return specialSymbolCount;
+}
+FILE: SpecialSymbolCounter.h
+#ifndef SPECIAL_SYMBOL_COUNTER_H
+#define SPECIAL_SYMBOL_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+#include <ostream>
+#include <cctype>
+
+class SpecialSymbolCounter : public Operation {
+private:
+    int specialSymbolCount;          
+    size_t maxTextLength;               
+    mutable std::mutex mtx;          
+    TextAnylazerModel& model;     
+
+public:
+    SpecialSymbolCounter(TextAnylazerModel& model, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    void printResults(std::ostream& out) const override;
+    bool validate(const std::string& text) const override;
+
+    void update(const std::string& message) override;
+        
+    int getSpecialSymbolCount() const;
+
+    std::string getResults() const;
+    void setMaxTextLength(size_t length);
+    void reset();
+    size_t getMaxTextLength() const;
+};
+
+#endif 
+
+FILE: TextAnylazerController.cpp
+#include "TextAnylazerController.h"
+#include "LetterCounter.h"
+#include "DigitCounter.h"
+#include "BracketCounter.h"
+#include "PunctuationCounter.h"
+#include "SpecialSymbolCounter.h"
+#include "WhitespaceCounter.h"
+#include "WordCounter.h"
+#include <fstream>
+#include <iostream>
+#include <set>
+#include <regex>
+#include "TextAnylazerView.h"
+
+TextAnylazerController::TextAnylazerController() {
+    model.addObserver(&view);
+
+    operations.push_back(std::make_unique<LetterCounter>(model));
+    operations.push_back(std::make_unique<DigitCounter>(model));
+    operations.push_back(std::make_unique<BracketCounter>(model));
+    operations.push_back(std::make_unique<PunctuationCounter>(model));
+    operations.push_back(std::make_unique<SpecialSymbolCounter>(model));
+    operations.push_back(std::make_unique<WhitespaceCounter>(model));
+
+    std::set<std::string> stopwords = { "and", "the", "of", "to", "a", "in" };
+    operations.push_back(std::make_unique<WordCounter>(model, stopwords));
+}
+
+void TextAnylazerController::analyze(const std::string& inputFile, const std::string& outputFile) {
+    try {
+        if (!isTxtFile(inputFile)) {
+            throw ValidationException("Input file must have a .txt extension.");
+        }
+
+        std::ifstream file(inputFile);
+        if (!file.is_open()) {
+            throw ValidationException("Could not open input file: " + inputFile);
+        }
+
+        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+        file.close();
+
+        for (const auto& operation : operations) {
+            operation->calculate(content);
+        }
+
+        if (!isTxtFile(outputFile)) {
+            throw ValidationException("Output file must have a .txt extension.");
+        }
+
+
+        std::ofstream outFile(outputFile);
+        if (!outFile.is_open()) {
+            throw ValidationException("Could not open output file: " + outputFile);
+        }
+
+        const auto& results = model.getResults();
+
+        std::cout << "Results:" << std::endl;
+        view.displayResults(results, std::cout);
+        view.displayResults(results, outFile);
+
+        outFile.close();
+    }
+    catch (const ValidationException& ex) {
+        std::cerr << "Validation Error: " << ex.what() << std::endl;
+        throw;
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "Error: " << ex.what() << std::endl;
+        throw;
+    }
+}
+
+bool TextAnylazerController::isTxtFile(const std::string& filename) const {
+    std::regex txtRegex(R"((.+)\.txt$)", std::regex_constants::icase);
+    return std::regex_match(filename, txtRegex);
+}
+
+FILE: TextAnylazerController.h
+#ifndef TEXT_ANALYZER_CONTROLLER_H
+#define TEXT_ANALYZER_CONTROLLER_H
+
+#include "TextAnylazerModel.h"
+#include "TextAnylazerView.h"
+#include "Operation.h"
+#include "ValidationException.h"
+#include <vector>
+#include <memory>
+#include <string>
+
+class TextAnylazerController {
+private:
+    TextAnylazerModel model;
+    TextAnylazerView view;
+    std::vector<std::unique_ptr<Operation>> operations;
+
+    bool isTxtFile(const std::string& filename) const;
+
+public:
+    TextAnylazerController();
+    void analyze(const std::string& inputFile, const std::string& outputFile);
+};
+
+#endif
+FILE:TextAnylazerModel.cpp
+#include "TextAnylazerModel.h"
+
+void TextAnylazerModel::addResult(const std::string& result) {
+    std::lock_guard<std::mutex> lock(mtx);
+    results.push_back(result);
+    notifyObservers("New result added: " + result);
+}
+
+const std::vector<std::string>& TextAnylazerModel::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return results;
+}
+FILE: TextAnylazerModel.h
+#ifndef TEXT_ANALYZER_MODEL_H
+#define TEXT_ANALYZER_MODEL_H
+
+#include "Observable.h"
+#include <string>
+#include <vector>
+#include <mutex>
+
+class TextAnylazerModel : public Observable {
+private:
+    mutable std::mutex mtx;
+    std::vector<std::string> results;
+
+public:
+    void addResult(const std::string& result);
+    const std::vector<std::string>& getResults() const;
+};
+
+#endif
+FILE:TextAnylazerView.cpp
+#include "TextAnylazerView.h"
+#include <iostream>
+#include <iomanip>
+
+void TextAnylazerView::update(const std::string& message) {
+    std::cout << "[INFO] View received update: " << message << std::endl;
+}
+
+void TextAnylazerView::displayResults(const std::vector<std::string>& results, std::ostream& out) const {
+    out << "------------------------------------------" << std::endl;
+    out << "          Text Analysis Results           " << std::endl;
+    out << "------------------------------------------" << std::endl;
+
+    for (const auto& result : results) {
+        out << "| " << std::setw(35) << std::left << result << " |" << std::endl;
+    }
+
+    out << "------------------------------------------" << std::endl;
+    out << "[END OF RESULTS]" << std::endl;
+}
+
+FILE: TextAnylazerView.h
+#ifndef TEXT_ANALYZER_VIEW_H
+#define TEXT_ANALYZER_VIEW_H
+
+#include "Observer.h"
+#include <iostream>
+#include <vector>
+#include <string>
+
+class TextAnylazerView : public Observer {
+public:
+    void update(const std::string& message) override;
+    void displayResults(const std::vector<std::string>& results, std::ostream& out) const;
+};
+
+#endif
+
+FILE: ValidationException.cpp
+#include "ValidationException.h"
+
+ValidationException::ValidationException(const std::string& message)
+    : std::runtime_error(message) {}
+
+FILE:ValidationException.h
+#ifndef VALIDATION_EXCEPTION_H
+#define VALIDATION_EXCEPTION_H
+
+#include <stdexcept>
+#include <string>
+
+class ValidationException : public std::runtime_error {
+public:
+    explicit ValidationException(const std::string& message);
+};
+
+#endif
+
+FILE:WhitespaceCounter.cpp
+#include "WhitespaceCounter.h"
+
+WhitespaceCounter::WhitespaceCounter(TextAnylazerModel& model, size_t maxTextLength)
+    : whitespaceCount(0), maxTextLength(maxTextLength), model(model) {}
+
+void WhitespaceCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    whitespaceCount = 0;
+    for (char ch : text) {
+        if (std::isspace(static_cast<unsigned char>(ch))) {
+            ++whitespaceCount;
+        }
+    }
+
+    model.addResult("Whitespace Characters: " + std::to_string(whitespaceCount));
+}
+
+void WhitespaceCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Whitespace Characters: " << whitespaceCount << std::endl;
+}
+
+bool WhitespaceCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Validation failed: Input text is empty.");
+    }
+    if (text.size() > maxTextLength) {
+        throw ValidationException("Validation failed: Input text length exceeds the maximum allowed length (" +
+            std::to_string(maxTextLength) + ").");
+    }
+    return true;
+}
+
+void WhitespaceCounter::update(const std::string& message) {
+    std::cout << "WhitespaceCounter received update: " << message << std::endl;
+}
+
+std::string WhitespaceCounter::getResults() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return "Whitespace Characters: " + std::to_string(whitespaceCount);
+}
+
+void WhitespaceCounter::setMaxTextLength(size_t length) {
+    std::lock_guard<std::mutex> lock(mtx);
+    maxTextLength = length;
+}
+
+void WhitespaceCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    whitespaceCount = 0;
+}
+
+size_t WhitespaceCounter::getMaxTextLength() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return maxTextLength;
+}
+
+int WhitespaceCounter::getWhitespaceCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return whitespaceCount;
+}
+FILE:WhitespaceCounter.h
+#ifndef WHITESPACE_COUNTER_H
+#define WHITESPACE_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <mutex>
+#include <ostream>
+#include <cctype>
+
+class WhitespaceCounter : public Operation {
+private:
+    int whitespaceCount;                
+    size_t maxTextLength;                
+    mutable std::mutex mtx;          
+    TextAnylazerModel& model;        
+
+public:
+    WhitespaceCounter(TextAnylazerModel& model, size_t maxTextLength = 10000);
+
+    void calculate(const std::string& text) override;
+    void printResults(std::ostream& out) const override;
+    bool validate(const std::string& text) const override;
+
+    int getWhitespaceCount() const;
+
+    void update(const std::string& message) override;
+
+    std::string getResults() const;
+    void setMaxTextLength(size_t length);
+    void reset();
+    size_t getMaxTextLength() const;
+};
+
+#endif
+FILE: WordCounter.cpp
+#include "WordCounter.h"
+
+WordCounter::WordCounter(TextAnylazerModel& model, const std::set<std::string>& stopwordsList)
+    : wordCount(0), stopwords(stopwordsList), model(model) {}
+
+std::string WordCounter::normalizeWord(const std::string& word) const {
+    std::string normalized;
+    for (char c : word) {
+        if (std::isalnum(static_cast<unsigned char>(c))) {
+            normalized += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+    }
+    return normalized;
+}
+
+void WordCounter::calculate(const std::string& text) {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    if (!validate(text)) {
+        throw ValidationException("Invalid input text: Validation failed.");
+    }
+
+    wordCount = 0;
+    std::istringstream stream(text);
+    std::string word;
+
+    while (stream >> word) {
+        word = normalizeWord(word);
+
+        if (!word.empty() && stopwords.find(word) == stopwords.end()) {
+            ++wordCount;
+        }
+    }
+
+    model.addResult("Word Count: " + std::to_string(wordCount));
+}
+
+void WordCounter::printResults(std::ostream& out) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    out << "Word Count: " << wordCount << std::endl;
+}
+
+bool WordCounter::validate(const std::string& text) const {
+    if (text.empty()) {
+        throw ValidationException("Validation failed: Input text is empty.");
+    }
+
+    for (char c : text) {
+        if (std::iscntrl(static_cast<unsigned char>(c)) &&
+            !std::isspace(static_cast<unsigned char>(c))) {
+            throw ValidationException("Validation failed: Text contains invalid control characters.");
+        }
+    }
+
+    return true;
+}
+
+void WordCounter::update(const std::string& message) {
+    std::cout << "WordCounter received update: " << message << std::endl;
+}
+
+int WordCounter::getWordCount() const {
+    std::lock_guard<std::mutex> lock(mtx);
+    return wordCount;
+}
+
+void WordCounter::addStopword(const std::string& stopword) {
+    std::lock_guard<std::mutex> lock(mtx);
+    stopwords.insert(normalizeWord(stopword));
+}
+
+void WordCounter::reset() {
+    std::lock_guard<std::mutex> lock(mtx);
+    wordCount = 0;
+}
+FILE: WordCounter.h
+#ifndef WORD_COUNTER_H
+#define WORD_COUNTER_H
+
+#include "Operation.h"
+#include "ValidationException.h"
+#include "TextAnylazerModel.h"
+#include <string>
+#include <set>
+#include <sstream>
+#include <cctype>
+#include <stdexcept>
+#include <ostream>
+#include <algorithm>
+#include <mutex>
+
+class WordCounter : public Operation {
+private:
+    int wordCount;                      
+    std::set<std::string> stopwords;   
+    mutable std::mutex mtx;                
+    TextAnylazerModel& model;        
+
+    std::string normalizeWord(const std::string& word) const;
+
+public:
+    WordCounter(TextAnylazerModel& model, const std::set<std::string>& stopwordsList = {});
+
+    void calculate(const std::string& text) override;
+    void printResults(std::ostream& out) const override;
+    bool validate(const std::string& text) const override;
+
+    void update(const std::string& message) override;
+
+    int getWordCount() const;
+    void addStopword(const std::string& stopword);
+    void reset();
+};
+
+#endif 

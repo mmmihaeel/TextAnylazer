@@ -1,0 +1,17 @@
+﻿  BracketCounter.cpp
+  DigitCounter.cpp
+  Observable.cpp
+  PunctuationCounter.cpp
+  SpecialSymbolCounter.cpp
+  TextAnylazerController.cpp
+  TextAnylazerModel.cpp
+  TextAnylazerView.cpp
+  TextAnylazerView.h
+  LetterCounter.cpp
+  main.cpp
+  ValidationException.cpp
+  WhitespaceCounter.cpp
+  WordCounter.cpp
+  Generating Code...
+x64\Debug\TextAnylazerView.obj : warning LNK4042: object specified more than once; extras ignored
+  TextAnylazer.vcxproj -> C:\Users\ADMIN\source\repos\TextAnylazer\x64\Debug\TextAnylazer.exe

@@ -1,0 +1,14 @@
+------------------------------------------
+          Text Analysis Results           
+------------------------------------------
+| Letters: 184                        |
+| Digits: 13                          |
+| Round Brackets: 4                   |
+| Square Brackets: 2                  |
+| Curly Brackets: 4                   |
+| Punctuation Marks: 22               |
+| Special Symbols: 12                 |
+| Whitespace Characters: 70           |
+| Word Count: 33                      |
+------------------------------------------
+[END OF RESULTS]
